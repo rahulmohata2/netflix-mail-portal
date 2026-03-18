@@ -55,7 +55,7 @@
     <div id="email-container">Loading your emails...</div>
 
     <script>
-        fetch('http://localhost:3000/api/netflix')
+        fetch('/api/netflix')
             .then(response => response.json())
             .then(emails => {
                 const container = document.getElementById('email-container');
@@ -272,7 +272,7 @@
             const errorText = document.getElementById('login-error');
 
             try {
-                const response = await fetch('http://localhost:3000/api/login', {
+                const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email, password: password })
@@ -298,7 +298,7 @@
         }
 
         function fetchEmails() {
-            fetch('http://localhost:3000/api/netflix')
+            fetch('/api/netflix')
                 .then(response => response.json())
                 .then(emails => {
                     const container = document.getElementById('email-container');
@@ -329,7 +329,7 @@
 
                             // If opening, ask server for permission and data
                             try {
-                                const response = await fetch('http://localhost:3000/api/view-email', {
+                                const response = await fetch('/api/view-email', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ emailId: email.id, userEmail: currentUserEmail, role: currentUserRole })
@@ -375,7 +375,7 @@
         // Fetch users from the server
         async function loadUsers() {
             try {
-                const response = await fetch(`http://localhost:3000/api/users?role=${currentUserRole}`);
+                const response = await fetch(`/api/users?role=${currentUserRole}`);
                 const users = await response.json();
                 
                 const tbody = document.getElementById('user-table-body');
@@ -413,7 +413,7 @@
             if (!email || !password) return alert("Please fill out all fields.");
 
             try {
-                const response = await fetch('http://localhost:3000/api/users', {
+                const response = await fetch('/api/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ requesterRole: currentUserRole, email, password, role })
@@ -434,7 +434,7 @@
         // Change an existing user's role
         async function changeRole(targetEmail, newRole) {
             try {
-                const response = await fetch('http://localhost:3000/api/users/role', {
+                const response = await fetch('/api/users/role', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ requesterRole: currentUserRole, targetEmail, newRole })
@@ -453,7 +453,7 @@
             if (!isConfirmed) return;
 
             try {
-                const response = await fetch('http://localhost:3000/api/users', {
+                const response = await fetch('/api/users', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ requesterRole: currentUserRole, targetEmail: targetEmail })
