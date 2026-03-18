@@ -1,0 +1,477 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Netflix Mail</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background-color: #f4f4f4; 
+            max-width: 800px; /* Keeps things centered and neat */
+            margin: 0 auto;
+        }
+        .netflix-red { color: #E50914; }
+
+        /* The clickable button when collapsed */
+        .email-header {
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .email-header:hover { background-color: #555; }
+        
+        /* The hidden email body */
+        .email-content {
+            display: none; /* Hidden by default! */
+            background: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            overflow-x: auto; /* Adds a scrollbar if Netflix images are too wide */
+        }
+
+        /* What happens when we click it (Active State) */
+        .email-card.active .email-content { display: block; }
+        .email-card.active .email-header {
+            background-color: #E50914; /* Turns Netflix Red when open */
+            border-radius: 5px 5px 0 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="netflix-red">Latest Netflix Emails</h1>
+    <div id="email-container">Loading your emails...</div>
+
+    <script>
+        fetch('http://localhost:3000/api/netflix')
+            .then(response => response.json())
+            .then(emails => {
+                const container = document.getElementById('email-container');
+                container.innerHTML = ''; 
+                
+                if(emails.length === 0) {
+                   container.innerHTML = '<p>No Netflix emails found.</p>';
+                   return;
+                }
+
+                emails.forEach(email => {
+                    // 1. Create the main wrapper
+                    const card = document.createElement('div');
+                    card.className = 'email-card';
+
+                    // 2. Create the clickable header (with the Subject line)
+                    const header = document.createElement('div');
+                    header.className = 'email-header';
+                    header.innerHTML = `<span>${email.subject}</span> <span class="arrow">▼</span>`;
+
+                    // 3. Create the hidden content area (with the huge HTML body)
+                    const content = document.createElement('div');
+                    content.className = 'email-content';
+                    content.innerHTML = email.body;
+
+                    // 4. The Click Magic!
+                    header.addEventListener('click', () => {
+                        // Toggle the 'active' class on and off
+                        card.classList.toggle('active');
+                        
+                        // Flip the arrow upside down when open
+                        const arrow = header.querySelector('.arrow');
+                        arrow.textContent = card.classList.contains('active') ? '▲' : '▼';
+                    });
+
+                    // 5. Put it all together on the screen
+                    card.appendChild(header);
+                    card.appendChild(content);
+                    container.appendChild(card);
+                });
+            })
+            .catch(error => {
+                document.getElementById('email-container').innerHTML = '<p>Error loading emails.</p>';
+                console.error('Error:', error);
+            });
+    </script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix Mail Portal</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #141414; /* Netflix dark background */
+            color: white;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding-top: 50px;
+        }
+        .netflix-red { color: #E50914; text-align: center; }
+
+        /* --- LOGIN SCREEN STYLES --- */
+        #login-screen {
+            background-color: rgba(0, 0, 0, 0.75);
+            padding: 40px 60px;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .input-group { margin-bottom: 20px; }
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            background: #333;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button.login-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #E50914;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button.login-btn:hover { background-color: #f40612; }
+        #login-error { color: #e87c03; margin-top: 15px; text-align: center; display: none; }
+
+        /* --- APP SCREEN STYLES (Hidden by default) --- */
+        #app-screen {
+            display: none; /* Hidden until logged in! */
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+        }
+        
+        /* The email accordion styles we made earlier */
+        .email-header {
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+        .email-header:hover { background-color: #555; }
+        .email-content {
+            display: none;
+            background: white;
+            color: black;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+            overflow-x: auto;
+        }
+        .email-card.active .email-content { display: block; }
+        .email-card.active .email-header { background-color: #E50914; border-radius: 5px 5px 0 0; }
+        /* --- ADMIN DASHBOARD STYLES --- */
+        #admin-btn { display: none; background: #fff; color: #141414; padding: 10px 15px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; margin-bottom: 20px;}
+        #admin-btn:hover { background: #ddd; }
+        
+        #admin-screen { display: none; width: 100%; max-width: 800px; padding: 20px; background: #222; border-radius: 5px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #333; }
+        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
+        th { background: #E50914; color: white; }
+        .role-btn { padding: 5px 10px; cursor: pointer; background: #555; color: white; border: none; border-radius: 3px; }
+        .role-btn:hover { background: #777; }
+        
+        .add-user-form { display: flex; gap: 10px; margin-top: 20px; }
+        .add-user-form input, .add-user-form select { padding: 10px; flex: 1; border-radius: 3px; border: none; }
+        .delete-btn { padding: 5px 10px; cursor: pointer; background: #E50914; color: white; border: none; border-radius: 3px; margin-left: 5px; }
+        .delete-btn:hover { background: #b20710; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <h2 class="netflix-red">Sign In</h2>
+        <div class="input-group">
+            <input type="email" id="email" placeholder="Email or phone number" required>
+        </div>
+        <div class="input-group">
+            <input type="password" id="password" placeholder="Password" required>
+        </div>
+        <button class="login-btn" onclick="attemptLogin()">Sign In</button>
+        <p id="login-error">Invalid credentials. Please try again.</p>
+    </div>
+
+    <div id="app-screen">
+        <h1 class="netflix-red">Netflix Mail Portal</h1>
+        <p id="welcome-message"></p>
+        
+        <button id="admin-btn" onclick="toggleAdminScreen()">⚙️ Manage Users</button>
+
+        <div id="email-container">Loading your emails...</div>
+
+        <div id="admin-screen">
+            <h2 class="netflix-red">User Management</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body">
+                    </tbody>
+            </table>
+
+            <h3 style="margin-top: 30px;">Add New User</h3>
+            <div class="add-user-form">
+                <input type="email" id="new-email" placeholder="Email address" required>
+                <input type="password" id="new-password" placeholder="Password" required>
+                <select id="new-role">
+                    <option value="Standard User">Standard User</option>
+                    <option value="Super Admin">Super Admin</option>
+                </select>
+                <button class="login-btn" style="margin-top: 0; width: auto;" onclick="addNewUser()">Add User</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Function to handle the login button click
+        // Variables to remember who is logged in
+        let currentUserEmail = '';
+        let currentUserRole = '';
+
+        async function attemptLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorText = document.getElementById('login-error');
+
+            try {
+                const response = await fetch('http://localhost:3000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, password: password })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    // Save user info in memory
+                    currentUserEmail = data.email;
+                    currentUserRole = data.role;
+                    if (currentUserRole === 'Super Admin') document.getElementById('admin-btn').style.display = 'block';
+
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-screen').style.display = 'block';
+                    document.getElementById('welcome-message').innerText = `Welcome, ${data.role}!`;
+                    errorText.style.display = 'none';
+                    
+                    fetchEmails();
+                } else {
+                    errorText.style.display = 'block';
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function fetchEmails() {
+            fetch('http://localhost:3000/api/netflix')
+                .then(response => response.json())
+                .then(emails => {
+                    const container = document.getElementById('email-container');
+                    container.innerHTML = ''; 
+
+                    emails.forEach(email => {
+                        const card = document.createElement('div');
+                        card.className = 'email-card';
+
+                        const header = document.createElement('div');
+                        header.className = 'email-header';
+                        header.innerHTML = `<span>${email.subject}</span> <span class="arrow">▼</span>`;
+
+                        const content = document.createElement('div');
+                        content.className = 'email-content';
+                        content.innerHTML = '<p style="text-align:center;">Loading secure email...</p>'; // Loading state
+
+                        // --- NEW CLICK LOGIC ---
+                        header.addEventListener('click', async () => {
+                            const isActive = card.classList.contains('active');
+                            
+                            // If closing, just toggle CSS
+                            if (isActive) {
+                                card.classList.remove('active');
+                                header.querySelector('.arrow').textContent = '▼';
+                                return;
+                            }
+
+                            // If opening, ask server for permission and data
+                            try {
+                                const response = await fetch('http://localhost:3000/api/view-email', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ emailId: email.id, userEmail: currentUserEmail, role: currentUserRole })
+                                });
+                                
+                                const data = await response.json();
+
+                                if (data.success) {
+                                    // Allowed! Show the email
+                                    content.innerHTML = data.body;
+                                    card.classList.add('active');
+                                    header.querySelector('.arrow').textContent = '▲';
+                                } else if (data.error === 'LIMIT_REACHED') {
+                                    // Blocked!
+                                    alert('🔒 24-HOUR LIMIT REACHED: ' + data.message);
+                                }
+                            } catch (err) {
+                                alert('Error loading email.');
+                            }
+                        });
+
+                        card.appendChild(header);
+                        card.appendChild(content);
+                        container.appendChild(card);
+                    });
+                });
+        }
+
+
+        // --- ADMIN DASHBOARD LOGIC ---
+
+        // Open/Close the Admin panel and fetch users
+        function toggleAdminScreen() {
+            const adminScreen = document.getElementById('admin-screen');
+            if (adminScreen.style.display === 'none' || adminScreen.style.display === '') {
+                adminScreen.style.display = 'block';
+                loadUsers(); // Fetch the latest user list from the database
+            } else {
+                adminScreen.style.display = 'none';
+            }
+        }
+
+        // Fetch users from the server
+        async function loadUsers() {
+            try {
+                const response = await fetch(`http://localhost:3000/api/users?role=${currentUserRole}`);
+                const users = await response.json();
+                
+                const tbody = document.getElementById('user-table-body');
+                tbody.innerHTML = ''; // Clear old rows
+
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    
+                    // Create a toggle button that switches their role
+                    const newRole = user.role === 'Super Admin' ? 'Standard User' : 'Super Admin';
+                    
+                    row.innerHTML = `
+                        <td>${user.email}</td>
+                        <td><strong>${user.role}</strong></td>
+                        <td>
+                            <button class="role-btn" onclick="changeRole('${user.email}', '${newRole}')">
+                                Make ${newRole}
+                            </button>
+                            <button class="delete-btn" onclick="deleteUser('${user.email}')">
+                                Delete
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) { alert('Failed to load users.'); }
+        }
+
+        // Add a new user to the database
+        async function addNewUser() {
+            const email = document.getElementById('new-email').value;
+            const password = document.getElementById('new-password').value;
+            const role = document.getElementById('new-role').value;
+
+            if (!email || !password) return alert("Please fill out all fields.");
+
+            try {
+                const response = await fetch('http://localhost:3000/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requesterRole: currentUserRole, email, password, role })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('User added successfully!');
+                    document.getElementById('new-email').value = '';
+                    document.getElementById('new-password').value = '';
+                    loadUsers(); // Refresh the table
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) { alert('Error adding user.'); }
+        }
+
+        // Change an existing user's role
+        async function changeRole(targetEmail, newRole) {
+            try {
+                const response = await fetch('http://localhost:3000/api/users/role', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requesterRole: currentUserRole, targetEmail, newRole })
+                });
+                
+                if (response.ok) {
+                    loadUsers(); // Refresh the table to show the new role
+                }
+            } catch (err) { alert('Error changing role.'); }
+        }
+
+        // Delete a user securely
+        async function deleteUser(targetEmail) {
+            // Built-in browser confirmation box to prevent accidental clicks
+            const isConfirmed = confirm(`Are you sure you want to permanently delete ${targetEmail}?`);
+            if (!isConfirmed) return;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/users', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requesterRole: currentUserRole, targetEmail: targetEmail })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadUsers(); // Refresh the table to remove the user from the screen
+                } else {
+                    alert(data.error || 'Failed to delete user.');
+                }
+            } catch (err) { 
+                alert('Error connecting to server.'); 
+            }
+        }
+    </script>
+</body>
+</html>
+
+
