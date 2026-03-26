@@ -1,111 +1,3 @@
-// require('dotenv').config();
-// const express = require('express');
-// const cors = require('cors');
-// const { google } = require('googleapis');
-
-// const app = express();
-// app.use(cors());
-// app.use(express.static(__dirname)); // Serves your index.html
-// app.use(express.json());
-
-// // --- TEMPORARY LOGIN SYSTEM (Will replace with Database later) ---
-// app.post('/api/login', (req, res) => {
-//     const { email, password } = req.body;
-
-//     // Check if it's the Super Admin
-//     if (email === 'admin@test.com' && password === 'admin123') {
-//         res.json({ success: true, role: 'Super Admin' });
-//     } 
-//     // Check if it's a regular user
-//     else if (email === 'user@test.com' && password === 'user123') {
-//         res.json({ success: true, role: 'Standard User' });
-//     } 
-//     // Wrong password or email
-//     else {
-//         res.status(401).json({ success: false, message: 'Invalid credentials' });
-//     }
-// });
-
-// const oAuth2Client = new google.auth.OAuth2(
-//   process.env.CLIENT_ID,
-//   process.env.CLIENT_SECRET,
-//   process.env.REDIRECT_URI
-// );
-
-// oAuth2Client.setCredentials({ refresh_token: process.env.REFRESH_TOKEN });
-// const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
-
-// // --- NEW DECODER FUNCTION ---
-// // This digs through the email data and unscrambles the Base64 code
-// function getEmailBody(payload) {
-//   let encodedBody = '';
-
-//   if (payload.parts) {
-//     for (let part of payload.parts) {
-//       if (part.mimeType === 'text/html') {
-//         encodedBody = part.body.data;
-//         break;
-//       } else if (part.parts) {
-//         encodedBody = getEmailBody(part); // Dig deeper if nested
-//         if (encodedBody) break;
-//       }
-//     }
-//   } else if (payload.body && payload.body.data) {
-//     encodedBody = payload.body.data;
-//   }
-
-//   if (encodedBody) {
-//     // Unscramble from Base64 to readable HTML
-//     const base64 = encodedBody.replace(/-/g, '+').replace(/_/g, '/');
-//     return Buffer.from(base64, 'base64').toString('utf-8');
-//   }
-//   return '<p>No content found</p>';
-// }
-
-// app.get('/api/netflix', async (req, res) => {
-//   try {
-//     const response = await gmail.users.messages.list({
-//       userId: 'me',
-//       q: 'from:netflix.com',
-//       maxResults: 5, // Feel free to change how many emails you want to see
-//     });
-
-//     const messages = response.data.messages || [];
-    
-//   const emailDetails = await Promise.all(
-//       messages.map(async (msg) => {
-//         const mail = await gmail.users.messages.get({ userId: 'me', id: msg.id });
-        
-//         // Dig through the headers to find the "Subject"
-//         const headers = mail.data.payload.headers;
-//         const subjectHeader = headers.find(header => header.name === 'Subject');
-//         const emailSubject = subjectHeader ? subjectHeader.value : 'Netflix Update';
-
-//         // Use our decoder function to get the full HTML body
-//         const fullBody = getEmailBody(mail.data.payload);
-
-//         return {
-//           id: msg.id,
-//           subject: emailSubject, // <-- We are now sending the Subject!
-//           body: fullBody 
-//         };
-//       })
-//     );
-
-//     res.json(emailDetails);
-
-//   } catch (error) {
-//     console.error('Error fetching emails:', error);
-//     res.status(500).json({ error: 'Failed to fetch emails' });
-//   }
-// });
-
-// app.listen(3000, () => {
-//   console.log('Server running on http://localhost:3000');
-// });
-
-
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -169,19 +61,38 @@ app.post('/api/login', (req, res) => {
 });
 
 // --- 4. FETCH SUBJECTS ONLY ---
+// --- 4. FETCH SUBJECTS ONLY ---
 app.get('/api/netflix', async (req, res) => {
     try {
       const response = await gmail.users.messages.list({ userId: 'me', q: 'from:netflix.com', maxResults: 5 });
       const messages = response.data.messages || [];
       
       const emailList = await Promise.all(messages.map(async (msg) => {
-          const mail = await gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'metadata', metadataHeaders: ['Subject'] });
-          const subjectHeader = mail.data.payload.headers.find(h => h.name === 'Subject');
-          return { id: msg.id, subject: subjectHeader ? subjectHeader.value : 'Netflix Update' };
+          const mail = await gmail.users.messages.get({ 
+              userId: 'me', 
+              id: msg.id, 
+              format: 'metadata', 
+              metadataHeaders: ['Subject', 'Date'] 
+          });
+          
+          // Added a fallback `|| []` to prevent crashes if headers are missing
+          const headers = mail.data.payload.headers || []; 
+          const subjectHeader = headers.find(h => h.name === 'Subject');
+          const dateHeader = headers.find(h => h.name === 'Date'); 
+
+          return { 
+              id: msg.id, 
+              subject: subjectHeader ? subjectHeader.value : 'Netflix Update',
+              date: dateHeader ? dateHeader.value : new Date().toISOString()
+          };
       }));
   
-      res.json(emailList); // Notice we are NO LONGER sending the body here!
-    } catch (error) { res.status(500).json({ error: 'Failed to fetch emails' }); }
+      res.json(emailList); 
+    } catch (error) { 
+        // THIS WILL NOW PRINT THE EXACT ERROR IN RENDER!
+        console.error("🚨 GMAIL API ERROR:", error.message); 
+        res.status(500).json({ error: error.message || 'Failed to fetch emails from Google' }); 
+    }
 });
 
 // --- 5. THE 24-HOUR GATEKEEPER ROUTE ---
